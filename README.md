@@ -2,6 +2,8 @@
 
 Simulate a Man-in-the-Middle (MITM) attack using ARP spoofing and DNS poisoning in an isolated lab environment. This demonstrates how attackers can intercept traffic and redirect DNS queries to malicious servers.
 
+**Note**: Please only do this within your private network for testing purposes. This should **NOT** be used to break through and hack traffic.
+
 # Process
 
 ### Lab Setup
@@ -20,7 +22,11 @@ sudo bettercap -iface wlan0
 
 Replace `wlan0` with your actual interface — use `eth0` for Ethernet.
 
-💡 From this step on, you should run everything inside bettercap. This means you should see a **constant yellow highlight** in your terminal.
+<blockquote>
+💡 From this step on, you should run everything inside bettercap. This means you should see a **constant yellow highlight** in your terminal, like:
+</blockquote>
+
+![Bettercap in terminal](https://brandefense.io/wp-content/uploads/2022/11/bettercap-net-sniff.png)
 
 ---
 
@@ -30,7 +36,6 @@ Replace `wlan0` with your actual interface — use `eth0` for Ethernet.
 
 ```jsx
 net.probe on
-
 ```
 
 **Step 3.** Note the Victim's IP and router's IP from the output, OR get the victim's IP from a command on the victim device.
@@ -43,12 +48,13 @@ set arp.spoof.fullduplex true
 arp.spoof on
 ```
 
+<blockquote>
 💡 **Full-duplex mode** spoofs BOTH directions:
-
 - Tells the **Victim** that the attacker is the router
 - Tells the **Router** that the attacker is the victim
-
 This ensures you intercept traffic going TO and FROM the victim.
+</blockquote>
+
 
 ---
 
@@ -65,8 +71,10 @@ dns.spoof on
 
 Replace `<ATTACKER_IP>` with the attacker Pi's IP address.
 
+<blockquote>
 ⚠️ **dns.spoof.ttl 300** sets the TTL to 300 seconds. The default (1024 seconds) causes spoofed DNS entries to persist on the victim long after you stop the attack. A low TTL ensures the victim's cache expires quickly during cleanup.
 💡 **set dns.spoof.domains google.com** prevents the victim from accessing google. If you want to spoof more than one domain, add the domains and separate them with commas.
+</blockquote>
 
 ### Part C: (Optional) Fake Server
 
