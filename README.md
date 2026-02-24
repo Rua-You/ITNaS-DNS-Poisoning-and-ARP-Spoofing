@@ -160,6 +160,18 @@ cat /proc/sys/net/ipv4/ip_forward
 
 ---
 
+# Solutions (How to Protect Yourself)
+
+Turning on a VPN would work for most cases.
+
+### Windows
+
+Simply mark every wifi as public in your settings. This blocks unauthorized DNS connections.
+
+### Mac
+
+1. Go to System Settings -> Network -> Firewall. Block all incoming connections and enable stealth mode. This blocks unauthorized DNS connections.
+
 # Extra Notes
 
 **Official Bettercap Documentation:**
